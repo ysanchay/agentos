@@ -49,6 +49,34 @@ importers:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@22.19.19)(@vitest/coverage-v8@4.1.8)(vite@8.0.16(@types/node@22.19.19))
 
+  packages/kernel:
+    dependencies:
+      '@agentos/eventstore':
+        specifier: workspace:*
+        version: link:../eventstore
+      '@agentos/protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      '@agentos/types':
+        specifier: workspace:*
+        version: link:../types
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+    devDependencies:
+      '@agentos/tsconfig':
+        specifier: workspace:*
+        version: link:../../tools/tsconfig
+      '@vitest/coverage-v8':
+        specifier: ^4.1.8
+        version: 4.1.8(vitest@4.1.8)
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.8
+        version: 4.1.8(@types/node@22.19.19)(@vitest/coverage-v8@4.1.8)(vite@8.0.16(@types/node@22.19.19))
+
   packages/protocol:
     dependencies:
       '@agentos/types':
