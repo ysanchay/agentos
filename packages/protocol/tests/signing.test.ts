@@ -10,7 +10,7 @@ describe('signing', () => {
       expect(publicKey).toBeTruthy();
       expect(privateKey).toMatch(/^[0-9a-f]+$/);
       expect(publicKey).toMatch(/^[0-9a-f]+$/);
-      expect(privateKey.length).toBe(128); // 64 bytes hex
+      expect(privateKey.length).toBe(64); // 32 bytes hex
       expect(publicKey.length).toBe(64); // 32 bytes hex
     });
 

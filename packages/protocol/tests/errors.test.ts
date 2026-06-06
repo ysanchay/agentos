@@ -29,6 +29,7 @@ import {
 describe('errors', () => {
   it('createACPError creates error with code and message', () => {
     const error = createACPError(ACP_E.SIGNATURE_INVALID, 'bad sig');
+    expect(error.ok).toBe(false);
     expect(error.error_code).toBe('ACP-E004');
     expect(error.error_message).toBe('bad sig');
     expect(error.retryable).toBe(false);
@@ -40,7 +41,7 @@ describe('errors', () => {
       retry_after: 5000,
     });
     expect(error.retryable).toBe(true);
-    expect(error.retry_after_ms).toBe(5000);
+    expect(error.retry_after).toBe(5000);
   });
 
   it('unknownRecipient', () => {
@@ -72,13 +73,13 @@ describe('errors', () => {
   });
 
   it('messageTooLarge', () => {
-    const error = messageTooLarge(2_000_000, 1_048_576);
+    const error = messageTooLarge(2000000, 1048576);
     expect(error.error_code).toBe(ACP_E.MESSAGE_TOO_LARGE);
-    expect(error.error_message).toContain('2_000_000');
+    expect(error.error_message).toContain('2000000');
   });
 
   it('payloadTooLarge', () => {
-    const error = payloadTooLarge(600_000, 524_288);
+    const error = payloadTooLarge(600000, 524288);
     expect(error.error_code).toBe(ACP_E.PAYLOAD_TOO_LARGE);
   });
 

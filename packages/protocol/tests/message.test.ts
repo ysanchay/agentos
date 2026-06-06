@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { buildMessage, canonicalForm, validateMessage, replyTo } from '../src/message.js';
-import type { ACPMessage } from '@agentos/types';
+import { buildMessage, canonicalForm, validateMessage, serializeMessage, replyTo } from '../src/message.js';
+import { createUUID, asUUID } from '@agentos/types';
+import type { AgentID } from '@agentos/types';
 
 describe('message', () => {
-  const sender = 'agent-sender-001' as any;
-  const recipient = 'agent-recipient-001' as any;
+  const sender = asUUID<AgentID>(createUUID());
+  const recipient = asUUID<AgentID>(createUUID());
 
   describe('buildMessage', () => {
     it('creates a message with defaults', () => {
@@ -40,6 +41,12 @@ describe('message', () => {
     it('supports broadcast recipient', () => {
       const msg = buildMessage('broadcast', 'general', 3, sender, '*', { topic: 'test' });
       expect(msg.recipient).toBe('*');
+    });
+
+    it('supports channel recipient', () => {
+      const channelId = asUUID<import('@agentos/types').ChannelID>(createUUID());
+      const msg = buildMessage('broadcast', 'general', 3, sender, channelId, { topic: 'test' });
+      expect(msg.recipient).toBe(channelId);
     });
   });
 
@@ -87,6 +94,28 @@ describe('message', () => {
       const c2 = canonicalForm(msg);
       expect(c1).toBe(c2);
     });
+
+    it('sorts nested object keys', () => {
+      const msg = buildMessage('task.create', 'general', 3, sender, recipient, { z: 1, a: 2 });
+      const canonical = canonicalForm(msg);
+      const parsed = JSON.parse(canonical);
+      const payloadKeys = Object.keys(parsed.payload);
+      expect(payloadKeys).toEqual([...payloadKeys].sort());
+    });
+
+    it('handles array values in canonical form', () => {
+      const msg = buildMessage('task.create', 'general', 3, sender, recipient, [3, 1, 2]);
+      const canonical = canonicalForm(msg);
+      const parsed = JSON.parse(canonical);
+      // Arrays should maintain their order
+      expect(parsed.payload).toEqual([3, 1, 2]);
+    });
+
+    it('handles null values', () => {
+      const msg = buildMessage('task.create', 'general', 3, sender, recipient, null);
+      const canonical = canonicalForm(msg);
+      expect(canonical).toBeTruthy();
+    });
   });
 
   describe('validateMessage', () => {
@@ -100,6 +129,46 @@ describe('message', () => {
       const msg = buildMessage('task.create', 'general', 3, sender, recipient, { title: 'Test' });
       msg.timestamp = new Date(Date.now() - 120_000).toISOString(); // 2 min ago, skew is 60s
       const result = validateMessage(msg);
+      expect(result.ok).toBe(false);
+    });
+
+    it('rejects a message with invalid timestamp (too far in future)', () => {
+      const msg = buildMessage('task.create', 'general', 3, sender, recipient, { title: 'Test' });
+      msg.timestamp = new Date(Date.now() + 120_000).toISOString(); // 2 min in future
+      const result = validateMessage(msg);
+      expect(result.ok).toBe(false);
+    });
+
+    it('rejects a message with invalid timestamp format', () => {
+      const msg = buildMessage('task.create', 'general', 3, sender, recipient, { title: 'Test' });
+      msg.timestamp = 'not-a-date';
+      const result = validateMessage(msg);
+      expect(result.ok).toBe(false);
+    });
+
+    it('accepts a message with timestamp within clock skew', () => {
+      const msg = buildMessage('task.create', 'general', 3, sender, recipient, { title: 'Test' });
+      msg.timestamp = new Date(Date.now() - 30_000).toISOString(); // 30s ago, within 60s skew
+      const result = validateMessage(msg);
+      expect(result.ok).toBe(true);
+    });
+  });
+
+  describe('serializeMessage', () => {
+    it('serializes a valid message', () => {
+      const msg = buildMessage('task.create', 'general', 3, sender, recipient, { title: 'Test' });
+      const result = serializeMessage(msg);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const parsed = JSON.parse(result.data);
+        expect(parsed.type).toBe('task.create');
+      }
+    });
+
+    it('rejects serialization of invalid message', () => {
+      const msg = buildMessage('task.create', 'general', 3, sender, recipient, { title: 'Test' });
+      msg.timestamp = new Date(Date.now() - 120_000).toISOString();
+      const result = serializeMessage(msg);
       expect(result.ok).toBe(false);
     });
   });
@@ -123,6 +192,23 @@ describe('message', () => {
 
       expect(reply.correlation_id).toBe('existing-corr');
       expect(reply.causation_id).toBe(original.id);
+    });
+
+    it('preserves channel and priority from original', () => {
+      const original = buildMessage('rpc.request', 'rpc-channel', 0, sender, recipient, { method: 'test' });
+      const reply = replyTo(original, 'rpc.response', recipient, { result: 'done' });
+
+      expect(reply.channel).toBe('rpc-channel');
+      expect(reply.priority).toBe(0);
+    });
+
+    it('passes custom options to reply', () => {
+      const original = buildMessage('rpc.request', 'rpc', 1, sender, recipient, { method: 'test' });
+      const reply = replyTo(original, 'rpc.response', recipient, { result: 'done' }, {
+        metadata: { replied: 'true' },
+      });
+
+      expect(reply.metadata).toEqual({ replied: 'true' });
     });
   });
 });

@@ -28,9 +28,9 @@ describe('rate-limit', () => {
     });
 
     it('tryConsumeN consumes multiple tokens', () => {
-      const limiter = new TokenBucketRateLimiter({ maxTokens: 5, refillRatePerMs: 0.01 });
+      const limiter = new TokenBucketRateLimiter({ maxTokens: 5, refillRatePerMs: 0 });
       expect(limiter.tryConsumeN(3)).toBe(true);
-      expect(limiter.availableTokens()).toBe(2);
+      expect(Math.floor(limiter.availableTokens())).toBe(2);
     });
 
     it('tryConsumeN fails if not enough tokens', () => {

@@ -1,17 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { validateACPMessage, validateMessageType, validateLivenessState } from '../src/validation.js';
+import { createUUID } from '@agentos/types';
 
 describe('validation', () => {
   describe('validateACPMessage', () => {
     it('accepts a valid ACPMessage', () => {
       const message = {
-        id: '123e4567-e89b-12d3-a456-426614174000',
+        id: createUUID(),
         version: '1.0',
         type: 'task.create',
         channel: 'general',
         priority: 3,
-        sender: 'agent-001',
-        recipient: 'agent-002',
+        sender: createUUID(),
+        recipient: createUUID(),
         timestamp: new Date().toISOString(),
         ttl: 3600000,
         payload: { title: 'Test' },
@@ -25,13 +26,13 @@ describe('validation', () => {
 
     it('rejects invalid message type', () => {
       const message = {
-        id: '123e4567-e89b-12d3-a456-426614174000',
+        id: createUUID(),
         version: '1.0',
         type: 'invalid.type',
         channel: 'general',
         priority: 3,
-        sender: 'agent-001',
-        recipient: 'agent-002',
+        sender: createUUID(),
+        recipient: createUUID(),
         timestamp: new Date().toISOString(),
         payload: {},
         signature: 'abc123',
@@ -44,13 +45,13 @@ describe('validation', () => {
 
     it('rejects missing required fields', () => {
       const message = {
-        id: '123e4567-e89b-12d3-a456-426614174000',
+        id: createUUID(),
         version: '1.0',
         // missing type
         channel: 'general',
         priority: 3,
-        sender: 'agent-001',
-        recipient: 'agent-002',
+        sender: createUUID(),
+        recipient: createUUID(),
         timestamp: new Date().toISOString(),
         payload: {},
         signature: 'abc123',
@@ -63,13 +64,13 @@ describe('validation', () => {
 
     it('rejects invalid priority value', () => {
       const message = {
-        id: '123e4567-e89b-12d3-a456-426614174000',
+        id: createUUID(),
         version: '1.0',
         type: 'task.create',
         channel: 'general',
         priority: 99,
-        sender: 'agent-001',
-        recipient: 'agent-002',
+        sender: createUUID(),
+        recipient: createUUID(),
         timestamp: new Date().toISOString(),
         payload: {},
         signature: 'abc123',
@@ -82,12 +83,12 @@ describe('validation', () => {
 
     it('accepts wildcard recipient', () => {
       const message = {
-        id: '123e4567-e89b-12d3-a456-426614174000',
+        id: createUUID(),
         version: '1.0',
         type: 'broadcast',
         channel: 'general',
         priority: 3,
-        sender: 'agent-001',
+        sender: createUUID(),
         recipient: '*',
         timestamp: new Date().toISOString(),
         payload: {},
@@ -97,6 +98,25 @@ describe('validation', () => {
 
       const result = validateACPMessage(message);
       expect(result.ok).toBe(true);
+    });
+
+    it('rejects invalid sender (non-UUID)', () => {
+      const message = {
+        id: createUUID(),
+        version: '1.0',
+        type: 'task.create',
+        channel: 'general',
+        priority: 3,
+        sender: 'not-a-uuid',
+        recipient: createUUID(),
+        timestamp: new Date().toISOString(),
+        payload: {},
+        signature: 'abc123',
+        signature_algorithm: 'ed25519',
+      };
+
+      const result = validateACPMessage(message);
+      expect(result.ok).toBe(false);
     });
   });
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { CircuitBreaker } from '../src/circuit-breaker.js';
 
 describe('circuit-breaker', () => {
@@ -36,7 +36,6 @@ describe('circuit-breaker', () => {
       cb.recordFailure();
       expect(cb.getState()).toBe('open');
 
-      // Wait for pause to expire
       return new Promise<void>((resolve) => {
         setTimeout(() => {
           const result = cb.allow();
@@ -59,6 +58,7 @@ describe('circuit-breaker', () => {
           expect(cb.getState()).toBe('half-open');
           cb.recordSuccess();
           expect(cb.getState()).toBe('closed');
+          expect(cb.failureCount).toBe(0); // reset after close - check via getStatus
           resolve();
         }, 100);
       });
@@ -91,6 +91,9 @@ describe('circuit-breaker', () => {
       const cb = new CircuitBreaker({ triggerCount: 1 });
       const result = await cb.execute(async () => { throw new Error('boom'); });
       expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error_message).toBe('boom');
+      }
       expect(cb.getState()).toBe('open');
     });
 
@@ -108,6 +111,16 @@ describe('circuit-breaker', () => {
       expect(status.state).toBe('closed');
       expect(status.failureCount).toBe(1);
       expect(status.successCount).toBe(0);
+      expect(status.lastFailureAt).toBeTruthy();
+      expect(status.lastStateChange).toBeTruthy();
+    });
+
+    it('getStatus with open state has openedAt', () => {
+      const cb = new CircuitBreaker({ triggerCount: 1 });
+      cb.recordFailure();
+      const status = cb.getStatus();
+      expect(status.state).toBe('open');
+      expect(status.openedAt).toBeTruthy();
     });
 
     it('reset returns to closed state', () => {
@@ -116,6 +129,9 @@ describe('circuit-breaker', () => {
       expect(cb.getState()).toBe('open');
       cb.reset();
       expect(cb.getState()).toBe('closed');
+      const status = cb.getStatus();
+      expect(status.failureCount).toBe(0);
+      expect(status.successCount).toBe(0);
     });
 
     it('trip forces open state', () => {
@@ -124,11 +140,63 @@ describe('circuit-breaker', () => {
       expect(cb.getState()).toBe('open');
     });
 
-    it('timeUntilHalfOpen returns remaining time', () => {
+    it('timeUntilHalfOpen returns 0 when not open', () => {
+      const cb = new CircuitBreaker();
+      expect(cb.timeUntilHalfOpen()).toBe(0);
+    });
+
+    it('timeUntilHalfOpen returns remaining time when open', () => {
       const cb = new CircuitBreaker({ triggerCount: 1, pauseMs: 60000 });
-      expect(cb.timeUntilHalfOpen()).toBe(0); // Not open
       cb.recordFailure();
       expect(cb.timeUntilHalfOpen()).toBeGreaterThan(0);
+    });
+
+    it('half-open allows limited test requests', () => {
+      const cb = new CircuitBreaker({ triggerCount: 1, pauseMs: 50, halfOpenSuccessCount: 2 });
+      cb.recordFailure();
+
+      return new Promise<void>((resolve) => {
+        setTimeout(() => {
+          cb.allow(); // transitions to half-open
+          expect(cb.getState()).toBe('half-open');
+
+          // Allow test request
+          const result = cb.allow();
+          expect(result.ok).toBe(true);
+
+          // Record success to close
+          cb.recordSuccess();
+          cb.recordSuccess();
+          expect(cb.getState()).toBe('closed');
+          resolve();
+        }, 100);
+      });
+    });
+
+    it('records success count in closed state', () => {
+      const cb = new CircuitBreaker();
+      cb.recordSuccess();
+      cb.recordSuccess();
+      const status = cb.getStatus();
+      expect(status.successCount).toBe(2);
+    });
+
+    it('execute works through half-open recovery', async () => {
+      const cb = new CircuitBreaker({ triggerCount: 1, pauseMs: 50, halfOpenSuccessCount: 2 });
+      cb.recordFailure();
+
+      return new Promise<void>((resolve) => {
+        setTimeout(async () => {
+          // Should transition to half-open and allow
+          const result1 = await cb.execute(async () => 'ok1');
+          expect(result1.ok).toBe(true);
+
+          const result2 = await cb.execute(async () => 'ok2');
+          expect(result2.ok).toBe(true);
+          expect(cb.getState()).toBe('closed');
+          resolve();
+        }, 100);
+      });
     });
   });
 });
