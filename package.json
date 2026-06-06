@@ -1,0 +1,26 @@
+{
+  "name": "agentos",
+  "private": true,
+  "packageManager": "pnpm@11.3.0",
+  "scripts": {
+    "build": "turbo build",
+    "test": "turbo test",
+    "test:unit": "turbo test:unit",
+    "test:integration": "turbo test:integration",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "clean": "turbo clean",
+    "docker:up": "docker compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f docker/docker-compose.yml down",
+    "docker:test:up": "docker compose -f docker/docker-compose.test.yml up -d",
+    "docker:test:down": "docker compose -f docker/docker-compose.test.yml down",
+    "simulation": "turbo build && pnpm --filter @agentos/simulation start"
+  },
+  "devDependencies": {
+    "turbo": "^2.9.16",
+    "typescript": "^5.8.0",
+    "vitest": "^4.1.8",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0"
+  }
+}

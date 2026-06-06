@@ -1,0 +1,22 @@
+import { z } from 'zod';
+
+export const zUUID = z.string().uuid();
+export const zAgentID = zUUID;
+export const zTaskID = zUUID;
+export const zWorkspaceID = zUUID;
+export const zProjectID = zUUID;
+export const zCapabilityID = zUUID;
+export const zPermissionID = zUUID;
+export const zMemoryID = zUUID;
+export const zAllocationID = zUUID;
+export const zEventID = zUUID;
+export const zApprovalID = zUUID;
+export const zUserID = zUUID;
+export const zOrgID = zUUID;
+export const zChannelID = zUUID;
+export const zProviderID = zUUID;
+export const zServiceID = zUUID;
+export const zInvocationID = zUUID;
+export const zConsensusID = zUUID;
+export const zLockID = zUUID;
+export const zSubscriptionID = zUUID;

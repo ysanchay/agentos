@@ -1,0 +1,12 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/types" },
+    { "path": "packages/protocol" },
+    { "path": "packages/kernel" },
+    { "path": "packages/eventstore" },
+    { "path": "packages/blackboard" },
+    { "path": "packages/resources" },
+    { "path": "packages/simulation" }
+  ]
+}

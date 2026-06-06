@@ -1,0 +1,105 @@
+/**
+ * AgentOS Error Codes
+ * All error codes from the 4 constitution namespaces
+ * KER-xxxx (15), ACP-Exxxx (22), BB-Exxxx (15), CG-Exxxx (17) = 74 total
+ */
+
+// ─── Kernel Error Codes (KER-xxxx) ──────────────────────────────────
+
+export const KER = {
+  NOT_FOUND: 'KER-0001',
+  ALREADY_EXISTS: 'KER-0002',
+  PERMISSION_DENIED: 'KER-0003',
+  INVALID_STATE_TRANSITION: 'KER-0004',
+  INVALID_ARGUMENT: 'KER-0005',
+  RESOURCE_EXHAUSTED: 'KER-0006',
+  TIMEOUT: 'KER-0007',
+  QUOTA_EXCEEDED: 'KER-0008',
+  BUDGET_EXCEEDED: 'KER-0009',
+  DEPENDENCY_NOT_MET: 'KER-0010',
+  CIRCULAR_DEPENDENCY: 'KER-0011',
+  AGENT_NOT_FOUND: 'KER-0012',
+  TASK_NOT_FOUND: 'KER-0013',
+  WORKSPACE_NOT_FOUND: 'KER-0014',
+  CAPABILITY_NOT_FOUND: 'KER-0015',
+} as const;
+
+export type KernelErrorCode = (typeof KER)[keyof typeof KER];
+
+// ─── ACP Error Codes (ACP-Exxxx) ───────────────────────────────────
+
+export const ACP_E = {
+  UNKNOWN_RECIPIENT: 'ACP-E001',
+  CHANNEL_NOT_FOUND: 'ACP-E002',
+  CHANNEL_FULL: 'ACP-E003',
+  SIGNATURE_INVALID: 'ACP-E004',
+  TIMESTAMP_OUT_OF_RANGE: 'ACP-E005',
+  MESSAGE_TOO_LARGE: 'ACP-E006',
+  PAYLOAD_TOO_LARGE: 'ACP-E007',
+  METADATA_TOO_LARGE: 'ACP-E008',
+  RATE_LIMIT_EXCEEDED: 'ACP-E009',
+  RPC_TIMEOUT: 'ACP-E010',
+  RPC_MAX_RETRIES: 'ACP-E011',
+  RPC_METHOD_NOT_FOUND: 'ACP-E012',
+  DUPLICATE_IDEMPOTENCY_KEY: 'ACP-E013',
+  HEARTBEAT_MISSED: 'ACP-E014',
+  AGENT_DEGRADED: 'ACP-E015',
+  AGENT_FAILED: 'ACP-E016',
+  ENCRYPTION_FAILED: 'ACP-E017',
+  DECRYPTION_FAILED: 'ACP-E018',
+  KEY_NOT_FOUND: 'ACP-E019',
+  KEY_REVOKED: 'ACP-E020',
+  CIRCUIT_BREAKER_OPEN: 'ACP-E021',
+  DLQ_ENQUEUED: 'ACP-E022',
+} as const;
+
+export type ACPErrorCode = (typeof ACP_E)[keyof typeof ACP_E];
+
+// ─── Blackboard Error Codes (BB-Exxxx) ──────────────────────────────
+
+export const BB_E = {
+  TASK_NOT_FOUND: 'BB-E001',
+  TASK_NOT_CLAIMABLE: 'BB-E002',
+  AGENT_LACKS_CAPABILITIES: 'BB-E003',
+  RESOURCES_UNAVAILABLE: 'BB-E004',
+  CLAIM_CONFLICT: 'BB-E005',
+  LOCK_UNAVAILABLE: 'BB-E006',
+  LOCK_TIMEOUT: 'BB-E007',
+  DEADLOCK_DETECTED: 'BB-E008',
+  DEPENDENCY_NOT_SATISFIED: 'BB-E009',
+  CIRCULAR_DEPENDENCY: 'BB-E010',
+  PERMISSION_DENIED: 'BB-E011',
+  VALIDATION_FAILED: 'BB-E012',
+  MAX_RETRIES_EXCEEDED: 'BB-E013',
+  PARTITION_DETECTED: 'BB-E014',
+  MERGE_CONFLICT: 'BB-E015',
+} as const;
+
+export type BlackboardErrorCode = (typeof BB_E)[keyof typeof BB_E];
+
+// ─── Capability Graph Error Codes (CG-Exxxx) ────────────────────────
+
+export const CG_E = {
+  CAPABILITY_NOT_FOUND: 'CG-E001',
+  NO_PROVIDER_AVAILABLE: 'CG-E002',
+  PROVIDER_OFFLINE: 'CG-E003',
+  PERMISSION_DENIED: 'CG-E004',
+  INPUT_VALIDATION_FAILED: 'CG-E005',
+  OUTPUT_VALIDATION_FAILED: 'CG-E006',
+  INVOCATION_TIMEOUT: 'CG-E007',
+  BUDGET_EXCEEDED: 'CG-E008',
+  RATE_LIMIT_EXCEEDED: 'CG-E009',
+  CAPABILITY_DEPRECATED: 'CG-E010',
+  VERSION_NOT_SUPPORTED: 'CG-E011',
+  APPROVAL_REQUIRED: 'CG-E012',
+  COMPOSITE_PIPELINE_FAILED: 'CG-E013',
+  REGISTRATION_CONFLICT: 'CG-E014',
+  INVALID_CAPABILITY_PATH: 'CG-E015',
+  HEALTH_CHECK_FAILED: 'CG-E016',
+  CACHE_MISS: 'CG-E017',
+} as const;
+
+export type CapabilityErrorCode = (typeof CG_E)[keyof typeof CG_E];
+
+/** Any AgentOS error code */
+export type AgentOSErrorCode = KernelErrorCode | ACPErrorCode | BlackboardErrorCode | CapabilityErrorCode;
