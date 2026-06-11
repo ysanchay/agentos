@@ -7,6 +7,12 @@
     { "path": "packages/eventstore" },
     { "path": "packages/blackboard" },
     { "path": "packages/resources" },
-    { "path": "packages/simulation" }
+    { "path": "packages/simulation" },
+    { "path": "packages/llm" },
+    { "path": "packages/swarm" },
+    { "path": "packages/memory" },
+    { "path": "packages/capabilities" },
+    { "path": "packages/browser" },
+    { "path": "packages/desktop" }
   ]
 }

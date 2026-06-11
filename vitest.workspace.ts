@@ -8,4 +8,10 @@ export default defineWorkspace([
   'packages/blackboard/vitest.config.ts',
   'packages/resources/vitest.config.ts',
   'packages/simulation/vitest.config.ts',
+  'packages/llm/vitest.config.ts',
+  'packages/swarm/vitest.config.ts',
+  'packages/memory/vitest.config.ts',
+  'packages/capabilities/vitest.config.ts',
+  'packages/browser/vitest.config.ts',
+  'packages/desktop/vitest.config.ts',
 ]);
