@@ -14,4 +14,5 @@ export default defineWorkspace([
   'packages/capabilities/vitest.config.ts',
   'packages/browser/vitest.config.ts',
   'packages/desktop/vitest.config.ts',
+  'packages/offline/vitest.config.ts',
 ]);

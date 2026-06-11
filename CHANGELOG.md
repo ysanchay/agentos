@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added — Offline Runtime (Batch 1)
+- **ADR-008: Offline Runtime** (Proposed) — defines the Offline/Online/Hybrid execution contract, 7 subsystems, and 7 new invariants. Pending Tier 2 governance approval.
+- **@agentos/offline** — new package establishing AgentOS as a true OS rather than a cloud-dependent platform. Batch 1 delivers the deterministic core:
+  - `ConnectivityMonitor` — debounces raw probes into a hysteresis-stable connectivity verdict (prevents mode flapping); zero network I/O (probes injected) for determinism.
+  - `ModeController` — pure state machine owning the current `ExecutionMode`; emits `system.mode.*` events to EventStore before notifying subsystems (audit-before-side-effects). Enforces invariant #5: a non-empty queue with connectivity stays HYBRID, never ONLINE.
+  - Full type system + Zod schemas for all 7 subsystems (model registry, inference router, execution queue, artifact/memory caches, sync engine) so later batches implement against a fixed surface.
+  - `OFF-xxxx` error namespace.
+- 20 tests, 98.6% statement / 100% line coverage.
+
+### Pending (subsequent Offline batches)
+- Local Model Registry + Local Inference Router (Batch 2)
+- Offline Execution Queue with idempotent replay + backpressure (Batch 3)
+- Artifact Cache + Memory Cache, content-addressed (Batch 4)
+- Synchronization Engine with conflict reconciliation (Batch 5)
+- Subsystem integration (Swarm/Memory/Capabilities/LLM) + simulation connectivity-chaos track (Batch 6)
+
 ## [0.1.0-alpha] - 2026-06-11
 
 ### Added

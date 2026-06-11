@@ -13,6 +13,7 @@
     { "path": "packages/memory" },
     { "path": "packages/capabilities" },
     { "path": "packages/browser" },
-    { "path": "packages/desktop" }
+    { "path": "packages/desktop" },
+    { "path": "packages/offline" }
   ]
 }
