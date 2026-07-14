@@ -275,7 +275,8 @@ export class HttpProvider extends ProviderBase {
   protected override async performHealthCheck(): Promise<{ healthy: boolean; details?: unknown }> {
     // Simple DNS resolution check — try a lightweight HEAD request
     try {
-      const response = await fetch('https://httpbin.org/head', {
+      const healthUrl = process.env['AGENTOS_HEALTH_CHECK_URL'] ?? 'https://httpbin.org/head';
+      const response = await fetch(healthUrl, {
         method: 'HEAD',
         signal: AbortSignal.timeout(5000),
       });

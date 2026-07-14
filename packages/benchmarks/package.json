@@ -1,0 +1,45 @@
+{
+  "name": "@agentos/benchmarks",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist coverage"
+  },
+  "dependencies": {
+    "@agentos/blackboard": "workspace:*",
+    "@agentos/browser": "workspace:*",
+    "@agentos/capabilities": "workspace:*",
+    "@agentos/desktop": "workspace:*",
+    "@agentos/eventstore": "workspace:*",
+    "@agentos/kernel": "workspace:*",
+    "@agentos/llm": "workspace:*",
+    "@agentos/memory": "workspace:*",
+    "@agentos/offline": "workspace:*",
+    "@agentos/resources": "workspace:*",
+    "@agentos/simulation": "workspace:*",
+    "@agentos/swarm": "workspace:*",
+    "@agentos/types": "workspace:*",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@agentos/tsconfig": "workspace:*",
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^4.1.8",
+    "typescript": "^5.8.0",
+    "vitest": "^4.1.8"
+  }
+}

@@ -52,6 +52,20 @@ export type {
   MissionControlSnapshot,
 } from './mission-control.js';
 
+// ─── Operational Console (Expanded Mission Control) ───────────────────────
+
+export { OperationalConsole } from './operational-console.js';
+export type {
+  AlertSeverity,
+  Alert,
+  OfflineStatus,
+  SecurityAuditEntry,
+  ResourceAlert,
+  PerformanceMetric,
+  EventTimelineEntry,
+  OperationalConsoleData,
+} from './operational-console.js';
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export type {

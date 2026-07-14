@@ -225,3 +225,7 @@ export type {
 
 // Constants
 export * from './constants.js';
+
+// Configuration
+export { envString, envNumber, envBool, loadConfig, DEFAULT_CONFIG } from './config.js';
+export type { AgentOSConfig } from './config.js';

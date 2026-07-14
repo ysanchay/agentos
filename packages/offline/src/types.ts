@@ -109,13 +109,24 @@ export type OfflineErrorCode = (typeof OFF)[keyof typeof OFF];
 export const ModelModalitySchema = z.enum(['text', 'code', 'vision', 'embedding']);
 export type ModelModality = z.infer<typeof ModelModalitySchema>;
 
+/** Health/readiness of a registered local model (ADR-008 R3). */
 export const ModelReadinessSchema = z.enum(['available', 'loading', 'unavailable']);
 export type ModelReadiness = z.infer<typeof ModelReadinessSchema>;
+
+/** Minimum host resources a local model needs to run (ADR-008 R5 sizing input). */
+export const HardwareRequirementsSchema = z.object({
+  minRamMb: z.number().nonnegative(),
+  requiresGpu: z.boolean().default(false),
+  minVramMb: z.number().nonnegative().optional(),
+});
+export type HardwareRequirements = z.infer<typeof HardwareRequirementsSchema>;
 
 /** A locally-runnable model — the authority on "what can I run with no network". */
 export const LocalModelSchema = z.object({
   id: z.string(),
   name: z.string(),
+  /** SemVer of the model build; enables version pinning and upgrade fallback. */
+  version: z.string(),
   modality: ModelModalitySchema,
   /** Capability task-types this model can serve offline (e.g. 'coding', 'reasoning'). */
   servesTaskTypes: z.array(z.string()),
@@ -124,10 +135,89 @@ export const LocalModelSchema = z.object({
   /** SHA-256 of the model artifact, for integrity (OFF-0005). */
   checksum: z.string().optional(),
   readiness: ModelReadinessSchema,
-  /** Per-1k-token RU cost profile — offline inference still consumes RU (§5.3). */
+  /** Per-1k-token RU cost profile — offline inference still consumes RU (§5.3 / R6). */
   ruPer1kTokens: z.number().nonnegative(),
+  /** Hardware floor; the registry can refuse to mark a model runnable on an undersized host. */
+  hardwareRequirements: HardwareRequirementsSchema.optional(),
+  /** Concurrent inference slots this model contributes to offline swarm sizing (R5). */
+  concurrencySlots: z.number().int().positive().default(1),
+  /** Fallback model id used when this model is unavailable for a task-type. */
+  fallbackModelId: z.string().optional(),
 });
 export type LocalModel = z.infer<typeof LocalModelSchema>;
+
+/** Host capability snapshot used to decide whether a model is actually runnable (R5). */
+export interface HostProfile {
+  ramMb: number;
+  hasGpu: boolean;
+  vramMb?: number;
+}
+
+// ─── Inference Router (Batch 2) ──────────────────────────────────────────
+
+/** Where the Offline Runtime decided to execute a reasoning/inference request. */
+export type RoutingTarget = 'local' | 'cloud' | 'queue';
+
+/**
+ * Tunable policy for the Inference Router. Defaults bias toward correctness
+ * (accuracy → cloud when reachable) while honoring the R3 ownership defaults.
+ */
+export interface RoutingPolicy {
+  /** What to optimize when both local and cloud are viable (ONLINE/HYBRID). */
+  optimizeFor: 'latency' | 'cost' | 'accuracy';
+  /** Enterprise governance can forbid cloud entirely (force local-only). */
+  allowCloud: boolean;
+  /** For an online-only capability while offline: queue it, or fail fast with OFF-0001 (R4). */
+  whenUnavailable: 'queue' | 'error';
+}
+
+export const DEFAULT_ROUTING_POLICY: RoutingPolicy = {
+  optimizeFor: 'accuracy',
+  allowCloud: true,
+  whenUnavailable: 'queue',
+};
+
+/** A transparent, auditable record of one routing decision. */
+export interface RoutingDecision {
+  taskType: string;
+  target: RoutingTarget;
+  mode: ExecutionMode;
+  /** Chosen local model, when target === 'local'. */
+  model?: LocalModel;
+  /** Model ids considered, in order (primary then fallbacks). */
+  consideredModelIds: string[];
+  reason: string;
+  /** Set when target === 'queue' and the request could not be served. */
+  errorCode?: OfflineErrorCode;
+}
+
+/** A request for reasoning/inference, capability-path shaped exactly as agents issue today. */
+export interface InferenceRequest {
+  /** AgentOS capability path, e.g. 'reason.infer.text' or 'create.code.typescript'. */
+  capabilityPath: string;
+  /** Resolved task-type (the @agentos/llm CapabilityRouter maps path → task-type). */
+  taskType: string;
+  workspaceId: string;
+  /** Opaque prompt/payload; the router does not inspect it (zero AI logic). */
+  payload: unknown;
+  /** Estimated tokens, used for RU accounting (R6). */
+  estimatedTokens?: number;
+  correlationId?: string;
+  causationId?: string;
+}
+
+/** Result of an executed inference, annotated with where/how it ran (R3 mode-scoring inputs). */
+export interface InferenceOutcome<T = unknown> {
+  ok: boolean;
+  data?: T;
+  decision: RoutingDecision;
+  /** True when served by a local model — lets the Reputation Engine score by mode. */
+  producedOffline: boolean;
+  /** RU consumed by local inference (0 for cloud/queue paths here; cloud accounts separately). */
+  ruConsumed: number;
+  errorCode?: OfflineErrorCode | string;
+  errorMessage?: string;
+}
 
 // ─── Offline Execution Queue (Batch 3) ───────────────────────────────────
 

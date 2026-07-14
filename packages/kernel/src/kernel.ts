@@ -734,9 +734,20 @@ export class Kernel {
 
   // ─── Permission Operations ───────────────────────────────────────
 
-  /** Grant a permission. */
+  /** Grant a permission. Also updates the agent's permissions array in the registry. */
   grantPermission(permission: Permission): Outcome<true> {
-    return this.permissionEngine.grant(permission);
+    const result = this.permissionEngine.grant(permission);
+    if (!result.ok) return result;
+    // Update the agent's permissions array so the invariant checker sees it
+    if (permission.grantee_type === 'agent') {
+      const agent = this.agentRegistry.get(permission.grantee_id as unknown as AgentID);
+      if (agent) {
+        this.agentRegistry.update(agent.id, {
+          permissions: [...agent.permissions, permission.id],
+        });
+      }
+    }
+    return ok(true);
   }
 
   /** Revoke a permission. */

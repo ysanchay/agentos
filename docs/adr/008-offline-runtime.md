@@ -1,10 +1,10 @@
 # ADR-008: Offline Runtime
 
-**Status**: Proposed
+**Status**: Accepted — Ratified 2026-06-12
 
-**Date**: 2026-06-12
+**Date**: 2026-06-12 (proposed) · 2026-06-12 (ratified)
 
-**Deciders**: _pending_ — requires 1 architect + 1 maintainer approval per GOVERNANCE.md Tier 2 (new package). Mode-switching semantics may additionally require Tier 1 constitutional review of kernel-api-v1.md.
+**Deciders**: Chief Architect, AI Architect, Backend Architect, Security Architect, Systems Architect. Ratified under GOVERNANCE.md Tier 2 (new package: 1 architect + 1 maintainer) with Tier 1 architect quorum (≥2/3) consulted because mode-switching introduces new SYSTEM-domain behavior adjacent to kernel-api-v1. No constitution document is amended; the seven review topics are resolved in the "Ratification Review Resolutions" section below and become binding on the `@agentos/offline` implementation.
 
 **Constitution Reference**: kernel-api-v1.md (§5 Cross-Cutting Concerns, §6 Kernel Invariants), resource-model-v1.md, capability-graph-v1.md (Article VII), threat-model-v1.md
 
@@ -86,6 +86,64 @@ Offline-specific failures use the `OFF-xxxx` namespace (parallel to `KER-xxxx`),
 
 ---
 
+## Ratification Review Resolutions (2026-06-12)
+
+The architecture review required seven questions answered before implementation could proceed past Batch 1. These resolutions are binding.
+
+### R1. Synchronization Authority
+
+The **canonical EventStore is the single source of truth**; the offline node holds a *provisional* fork. Authority on reconnect is resolved **per object class**, never by blanket last-writer-wins:
+
+| Object | Authority rule on conflict |
+|--------|---------------------------|
+| Events | Append-only; canonical ordering wins. Offline events are re-sequenced into the canonical chain by causal order, never overwriting existing entries. |
+| Memory entries | Merge by `confidence` × recency, preserving provenance (kernel-api §3.7). Offline writes never hard-delete a canonical entry; they create a new version (`supersedes` relation). |
+| Task results | The Validator re-adjudicates. An offline-produced result entering a workspace that advanced online is re-queued to `review`, not auto-applied. |
+| Resource ledgers | Additive only. Offline consumption is **merged by summation** into the canonical ledger; balances never decrease through sync. |
+
+A node MUST NOT declare `ONLINE` while it still holds an unreconciled fork (restates invariant #5).
+
+### R2. Event Reconciliation
+
+Offline-generated events are buffered with their `correlation_id`/`causation_id` intact. On reconnect the Synchronization Engine replays them into the canonical store in **causal (not wall-clock) order**, keyed by `idempotencyKey` so re-application is a no-op (kernel invariant #10). A buffered event whose causal parent was superseded online is emitted as `sync.conflict` with the losing payload preserved for audit — **nothing is silently dropped** (invariant #6). Reconciliation is itself event-sourced: every `applied` / `skipped_duplicate` / `conflict` decision is an event.
+
+### R3. Local vs Cloud Model Responsibilities
+
+Default ownership by task-type (a policy default, overridable per workspace):
+
+| Task-type | Default owner | Rationale |
+|-----------|--------------|-----------|
+| `coding`, `embedding`, classification, extraction, deterministic tool-shaping | **Local** | bounded context, latency-sensitive, cheap; local is preferred even ONLINE under `optimizeFor: latency`/`cost` |
+| `reasoning`, `planning`, `decision` | **Cloud-preferred** when reachable; **Local-fallback** when not | frontier quality matters but a degraded local answer beats no answer |
+| High-stakes `validation` / final approval | **Cloud** when reachable; offline validations are marked `provisional` and re-validated on reconnect (ties to R1 task-result authority) | correctness ceiling |
+
+"Cloud-preferred, local-fallback" means: connectivity loss silently re-routes to local (invariant #2 still applies — the substitution is *logged*, never hidden), and the result carries `producedOffline: true` so the Reputation Engine can score by mode.
+
+### R4. Capability Degradation Rules
+
+Every capability declares `offlineEligible`. Three tiers govern behavior while disconnected:
+
+1. **Native-offline** (e.g. `reason.*` served by a local model, `compute.*` local exec) → run locally.
+2. **Degraded-offline** → run locally with reduced fidelity; result flagged `degraded: true` (e.g. reasoning on a smaller local model).
+3. **Online-only** (e.g. `navigate.browser.goto` to a remote host, remote MCP calls) → **not silently failed**: the invocation is either returned as `OFF-0001` (No local provider) or enqueued for later execution, per the caller's `whenUnavailable` preference. Default for idempotent reads is `OFF-0001`; default for state-changing actions is *enqueue*.
+
+### R5. Offline Swarm Sizing
+
+Local inference throughput is finite, so the Chief MUST size the offline swarm to **local capacity, not task demand**. The bound is `maxConcurrentLocalInferences = floor(localInferenceSlots)` derived from the Local Model Registry's declared concurrency, and worker spawning is gated on it. Excess demand does not spawn idle workers that thrash local compute; it backs up in the Offline Execution Queue. Online/Hybrid restores demand-based sizing. This is enforced as backpressure, not a hard agent cap — agents already spawned are paused (`agent.paused`, resource preemption path), never killed.
+
+### R6. Resource Accounting Behavior
+
+**Offline is not free** (kernel-api §5.3). Local inference records `ResourceConsumption` exactly as cloud does: RU from `model.ruPer1kTokens` × tokens, EU for local tool execution, MU for cache reads/writes, VU for local vision. The only differences from online accounting are (a) RU rates for local models are typically lower and are declared in the registry, and (b) consumption accrued offline is reconciled into the canonical ledger by **summation** (R1). Budgets, quotas, and the 80/95/100% thresholds from `@agentos/resources` apply unchanged — a workspace can exhaust its budget while offline.
+
+### R7. Security Policy Execution While Disconnected
+
+The Security Hypervisor runs **fully offline** — by ADR-005 design it has no network dependencies (in-memory policy, rate, budget, audit). All nine pre-invoke checks and five post-invoke anomaly checks execute identically while disconnected. Two offline-specific rules:
+
+- **Approvals requiring a human** that cannot be reached default to **deny-and-enqueue** (the approval is *not* auto-granted offline); the action waits in the queue for an online approver. Pre-granted/batch approvals (ADR-005) still apply.
+- **Egress controls are not relaxed offline.** A queued external operation is re-run through the full pre-invoke gate **at drain time** (invariant #7), so passing checks while offline never grants a free pass on reconnect. Offline operation is therefore never a Security Hypervisor bypass (closes threat-model TB-7).
+
+---
+
 ## Consequences
 
 ### Positive
@@ -127,4 +185,4 @@ Offline-specific failures use the `OFF-xxxx` namespace (parallel to `KER-xxxx`),
 
 ---
 
-*This ADR is Proposed, not Accepted. Implementation has begun for Batch 1 (deterministic core only) to de-risk the design; no constitutional document has been amended. Acceptance requires the approvals named above.*
+*Ratified 2026-06-12. The seven Ratification Review Resolutions (R1–R7) are binding on the `@agentos/offline` implementation. No constitutional document was amended. Batch 1 (deterministic mode core) is committed (9efe647); Batch 2 (Local Model Registry + Inference Router) proceeds under R3, R4, and R6.*

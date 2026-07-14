@@ -45,9 +45,10 @@ export interface LLMClientConfig {
 
 /** Default LLM client configuration. */
 export const DEFAULT_LLM_CONFIG: LLMClientConfig = {
-  baseURL: 'http://localhost:8080',
-  timeout: 120_000,
-  maxRetries: 3,
+  baseURL: process.env['AGENTOS_LLM_BASE_URL'] ?? 'http://localhost:8080',
+  timeout: Number(process.env['AGENTOS_LLM_TIMEOUT'] ?? '120000'),
+  maxRetries: Number(process.env['AGENTOS_LLM_MAX_RETRIES'] ?? '3'),
+  apiKey: process.env['AGENTOS_LLM_API_KEY'],
   tokenCosts: DEFAULT_TOKEN_COSTS,
 };
 
