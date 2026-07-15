@@ -182,5 +182,3 @@ Apache License 2.0 — See [LICENSE](LICENSE).
 - See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community standards
 
 ---
-
-AgentOS is developed by [Nous Research](https://nousresearch.com).
