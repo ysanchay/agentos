@@ -14,7 +14,14 @@ jobs:
         with:
           node-version: 22
       - run: npm install -g pnpm@10
-      - run: pnpm install --no-frozen-lockfile 2>&1 || exit 1
+      - name: Install deps
+        run: |
+          pnpm install --no-frozen-lockfile 2>&1 | tee install.log
+          if [ $? -ne 0 ]; then
+            echo "::error::Install failed. Last 20 lines:"
+            tail -20 install.log
+            exit 1
+          fi
       - run: pnpm build
 
   test:
@@ -48,7 +55,14 @@ jobs:
         with:
           node-version: 22
       - run: npm install -g pnpm@10
-      - run: pnpm install --no-frozen-lockfile 2>&1 || exit 1
+      - name: Install deps
+        run: |
+          pnpm install --no-frozen-lockfile 2>&1 | tee install.log
+          if [ $? -ne 0 ]; then
+            echo "::error::Install failed. Last 20 lines:"
+            tail -20 install.log
+            exit 1
+          fi
       - run: pnpm build
       - run: pnpm test -- --filter '!@agentos/desktop' || true
       - uses: actions/upload-artifact@v4
