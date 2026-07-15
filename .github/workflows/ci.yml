@@ -10,13 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 11
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: pnpm
+      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
@@ -47,13 +44,10 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 11
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: pnpm
+      - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm test -- --filter '!@agentos/desktop'
