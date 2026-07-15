@@ -15,18 +15,8 @@ jobs:
           node-version: 22
       - run: npm install -g pnpm@11.3.0
       - run: pnpm install --no-frozen-lockfile
-      - name: Build packages in dependency order
-        run: |
-          echo "Building @agentos/types..."
-          pnpm --filter @agentos/types build
-          echo "Building @agentos/eventstore..."
-          pnpm --filter @agentos/eventstore build
-          echo "Building @agentos/protocol..."
-          pnpm --filter @agentos/protocol build
-          echo "Building @agentos/kernel..."
-          pnpm --filter @agentos/kernel build
-          echo "Building remaining packages..."
-          pnpm build --force
+      - name: Build all packages
+        run: npx tsc -b --verbose
 
   test:
     runs-on: ubuntu-latest
@@ -60,18 +50,8 @@ jobs:
           node-version: 22
       - run: npm install -g pnpm@11.3.0
       - run: pnpm install --no-frozen-lockfile
-      - name: Build packages in dependency order
-        run: |
-          echo "Building @agentos/types..."
-          pnpm --filter @agentos/types build
-          echo "Building @agentos/eventstore..."
-          pnpm --filter @agentos/eventstore build
-          echo "Building @agentos/protocol..."
-          pnpm --filter @agentos/protocol build
-          echo "Building @agentos/kernel..."
-          pnpm --filter @agentos/kernel build
-          echo "Building remaining packages..."
-          pnpm build --force
+      - name: Build all packages
+        run: npx tsc -b --verbose
       - run: pnpm test -- --filter '!@agentos/desktop' || true
       - uses: actions/upload-artifact@v4
         with:
