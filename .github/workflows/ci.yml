@@ -15,10 +15,8 @@ jobs:
           node-version: 22
       - run: npm install -g pnpm@11.3.0
       - run: pnpm install --no-frozen-lockfile
-      - name: Build types first
-        run: pnpm --filter @agentos/types build
-      - name: Build all
-        run: pnpm build
+      - name: Build (sequential, no cache)
+        run: pnpm build -- --force
 
   test:
     runs-on: ubuntu-latest
@@ -52,10 +50,8 @@ jobs:
           node-version: 22
       - run: npm install -g pnpm@11.3.0
       - run: pnpm install --no-frozen-lockfile
-      - name: Build types first
-        run: pnpm --filter @agentos/types build
-      - name: Build all
-        run: pnpm build
+      - name: Build (sequential, no cache)
+        run: pnpm build -- --force
       - run: pnpm test -- --filter '!@agentos/desktop' || true
       - uses: actions/upload-artifact@v4
         with:
