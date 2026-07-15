@@ -2,15 +2,11 @@ name: CI
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,23 +14,11 @@ jobs:
           node-version: 22
       - run: npm install -g pnpm@11.3.0
       - run: pnpm install --no-frozen-lockfile
-      - name: Build and capture errors
-        run: |
-          pnpm build 2>&1 | tee /tmp/build.log || true
-          if grep -q "error TS\|ELIFECYCLE\|Failed:" /tmp/build.log; then
-            echo "=== BUILD ERRORS FOUND ==="
-            grep -E "error TS|ELIFECYCLE|Failed:|ERR_" /tmp/build.log
-            echo "=== LAST 30 LINES ==="
-            tail -30 /tmp/build.log
-            exit 1
-          fi
-          echo "Build succeeded!"
+      - name: Build
+        run: pnpm build
 
   test:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: write
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -65,16 +49,8 @@ jobs:
           node-version: 22
       - run: npm install -g pnpm@11.3.0
       - run: pnpm install --no-frozen-lockfile
-      - name: Build and capture errors
-        run: |
-          pnpm build 2>&1 | tee /tmp/build.log || true
-          if grep -q "error TS\|ELIFECYCLE\|Failed:" /tmp/build.log; then
-            echo "=== BUILD ERRORS FOUND ==="
-            grep -E "error TS|ELIFECYCLE|Failed:|ERR_" /tmp/build.log
-            echo "=== LAST 30 LINES ==="
-            tail -30 /tmp/build.log
-            exit 1
-          fi
+      - name: Build
+        run: pnpm build
       - run: pnpm test -- --filter '!@agentos/desktop' || true
       - uses: actions/upload-artifact@v4
         with:
