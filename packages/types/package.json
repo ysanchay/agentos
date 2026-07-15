@@ -3,15 +3,15 @@
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "./src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./zod": {
-      "types": "./dist/zod/index.d.ts",
+      "types": "./zod/index.ts",
       "import": "./dist/zod/index.js",
       "default": "./dist/zod/index.js"
     }
