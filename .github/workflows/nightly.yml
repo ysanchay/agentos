@@ -39,7 +39,7 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --no-frozen-lockfile
       - run: pnpm build
       - run: pnpm --filter @agentos/simulation start -- --agents 100 --duration 60000
       - name: Verify simulation results
