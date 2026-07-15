@@ -2,7 +2,8 @@ name: CI
 on:
   pull_request:
     branches: [main]
-  workflow_dispatch:
+  push:
+    branches: [main]
 
 jobs:
   build:
@@ -14,8 +15,7 @@ jobs:
           node-version: 22
       - run: npm install -g pnpm@11.3.0
       - run: pnpm install --no-frozen-lockfile
-      - name: Build
-        run: pnpm build
+      - run: pnpm build
 
   test:
     runs-on: ubuntu-latest
@@ -49,8 +49,7 @@ jobs:
           node-version: 22
       - run: npm install -g pnpm@11.3.0
       - run: pnpm install --no-frozen-lockfile
-      - name: Build
-        run: pnpm build
+      - run: pnpm build
       - run: pnpm test -- --filter '!@agentos/desktop' || true
       - uses: actions/upload-artifact@v4
         with:
