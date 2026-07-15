@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: corepack enable
+      - run: npm install -g pnpm@11
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm build
 
@@ -47,7 +47,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: corepack enable
+      - run: npm install -g pnpm@11
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm build
       - run: pnpm test -- --filter '!@agentos/desktop'
